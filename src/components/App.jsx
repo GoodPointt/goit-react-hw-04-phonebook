@@ -1,121 +1,127 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import { ContactForm } from './ContactForm/ContactForm';
 import { Contacts } from './Contacts/Contacts';
 import { Filter } from './Filter/Filter';
 import { StyledBtn, StyledContainer, StyledItemBtn } from './Styled';
 import { Modal } from './Modal/Modal';
 
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-    showModal: false,
-  };
+export const App = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [contacts, setContacts] = useState(
+    JSON.parse(localStorage.getItem('contacts')),
+    []
+  );
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const loadContacts = localStorage.getItem('contacts');
-    let parsedContacts = JSON.parse(loadContacts);
-    parsedContacts && this.setState({ contacts: parsedContacts });
-  }
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
+  const toggleModal = () => setShowModal(!showModal);
 
-  isExist = newContact => {
-    return this.state.contacts.find(
+  const isExist = newContact => {
+    return contacts.find(
       contact => contact.name.toLowerCase() === newContact.name.toLowerCase()
     )
       ? true
       : false;
   };
 
-  addNewContact = newContact => {
-    if (this.isExist(newContact)) {
-      alert(`${newContact.name} is already in contacts.`);
-      return;
+  const addNewContact = newContact => {
+    if (isExist(newContact)) {
+      return toast.warn(`${newContact.name} is already in contacts.`);
     }
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, newContact],
-    }));
+    setContacts(prevState => [...prevState, newContact]);
+    toast.success(`${newContact.name} succesfully added to your contacts`);
+    toggleModal();
   };
 
-  deleteContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contactId !== contact.id),
-    }));
+  const deleteContact = contactId => {
+    setContacts(prevState => {
+      const afterDelContcts = prevState.filter(
+        contact => contactId !== contact.id
+      );
+      if (prevState.length > afterDelContcts.length) {
+        toast.info(
+          `${
+            prevState.find(contact => contactId === contact.id).name
+          } was successfuly deleted from your contacts`
+        );
+        return afterDelContcts;
+      }
+    });
   };
 
-  handleChange = e => {
+  const handleChange = e => {
     e.preventDefault();
     const { value, name } = e.target;
-    this.setState({ [name]: value });
+    if (name === 'filter') setFilter(value);
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
-  };
+  const filteredContacts = contacts.filter(
+    contact =>
+      contact.name.toLowerCase().includes(filter.toLowerCase()) ||
+      contact.number.includes(filter)
+  );
 
-  render() {
-    const { filter, contacts, showModal } = this.state;
-
-    const filteredContacts = contacts.filter(
-      contact =>
-        contact.name.toLowerCase().includes(filter.toLowerCase()) ||
-        contact.number.includes(filter)
-    );
-
-    return (
-      <StyledContainer>
-        <h1>Phonebook</h1>
-        <StyledBtn
-          type="button"
-          onClick={this.toggleModal}
-          style={{
-            display: 'block',
-            margin: '0 auto',
-            fontSize: '32px',
-          }}
-        >
-          Add new contact
-        </StyledBtn>
-        <h2>
-          There
-          {contacts.length === 1 ? (
-            <span> is {contacts.length} contact </span>
-          ) : (
-            <span> are {contacts.length} contacts </span>
-          )}
-          in your phonebook
-        </h2>
-
-        {contacts.length > 0 && (
-          <Filter handleChange={this.handleChange} filter={filter} />
+  return (
+    <StyledContainer>
+      <h1>Phonebook</h1>
+      <StyledBtn
+        type="button"
+        onClick={toggleModal}
+        style={{
+          display: 'block',
+          margin: '0 auto',
+          fontSize: '32px',
+        }}
+      >
+        Add new contact
+      </StyledBtn>
+      <h2>
+        There
+        {contacts.length === 1 ? (
+          <span> is {contacts.length} contact </span>
+        ) : (
+          <span> are {contacts.length} contacts </span>
         )}
+        in your phonebook
+      </h2>
 
-        <Contacts
-          contacts={contacts}
-          filteredContacts={filteredContacts}
-          filter={filter}
-          deleteContact={this.deleteContact}
-        />
+      {contacts.length > 0 && (
+        <Filter handleChange={handleChange} filter={filter} />
+      )}
 
-        {showModal && (
-          <Modal closeModal={this.toggleModal}>
-            <StyledItemBtn type="button" onClick={this.toggleModal}>
-              X
-            </StyledItemBtn>
-            <ContactForm
-              addNewContact={this.addNewContact}
-              closeModal={this.toggleModal}
-            />
-          </Modal>
-        )}
-      </StyledContainer>
-    );
-  }
-}
+      <Contacts
+        contacts={contacts}
+        filteredContacts={filteredContacts}
+        filter={filter}
+        deleteContact={deleteContact}
+      />
+
+      {showModal && (
+        <Modal closeModal={toggleModal}>
+          <StyledItemBtn type="button" onClick={toggleModal}>
+            X
+          </StyledItemBtn>
+          <ContactForm addNewContact={addNewContact} closeModal={toggleModal} />
+        </Modal>
+      )}
+      <ToastContainer
+        position="top-right"
+        autoClose={1700}
+        hideProgressBar={true}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+    </StyledContainer>
+  );
+};

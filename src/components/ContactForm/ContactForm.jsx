@@ -6,7 +6,7 @@ import * as Yup from 'yup';
 
 import { StyledBtn, ErrorMsg, StyledInput } from 'components/Styled';
 
-export const ContactForm = ({ addNewContact, closeModal }) => {
+export const ContactForm = ({ addNewContact }) => {
   const initialValues = {
     name: '',
     number: '',
@@ -34,7 +34,6 @@ export const ContactForm = ({ addNewContact, closeModal }) => {
       ...values,
     };
     addNewContact(newContact);
-    closeModal();
   };
 
   return (
