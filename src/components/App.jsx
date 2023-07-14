@@ -11,8 +11,7 @@ import { Modal } from './Modal/Modal';
 export const App = () => {
   const [showModal, setShowModal] = useState(false);
   const [contacts, setContacts] = useState(
-    JSON.parse(localStorage.getItem('contacts')),
-    []
+    JSON.parse(localStorage.getItem('contacts')) || []
   );
   const [filter, setFilter] = useState('');
 
